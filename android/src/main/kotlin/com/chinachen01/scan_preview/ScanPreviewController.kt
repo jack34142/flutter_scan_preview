@@ -47,6 +47,7 @@ class ScanPreviewController(context: Context,
     }
     private val methodChannel = MethodChannel(binaryMessenger, "${ScanPreviewPlugin.VIEW_TYPE}_$id")
     private val messageChannel = BasicMessageChannel(binaryMessenger, MESSAGE_CHANNEL, StandardMessageCodec())
+    private var result: String = ""
 
     init {
         methodChannel.setMethodCallHandler(this)
@@ -75,6 +76,7 @@ class ScanPreviewController(context: Context,
     }
 
     private fun startCamera() {
+        scanPreview.stopCamera()
         scanPreview.startCamera()
     }
 
@@ -87,7 +89,15 @@ class ScanPreviewController(context: Context,
     }
 
     override fun handleResult(rawResult: ZxinResult?) {
-        rawResult ?: return
-        messageChannel.send(rawResult.text)
+        if(rawResult != null){
+            Log.d(MESSAGE_CHANNEL, "result = " + rawResult.text)
+            if(rawResult.text == result) {
+                messageChannel.send(result)
+                return
+            }else{
+                result = rawResult.text
+            }
+        }
+        scanPreview.resumeCameraPreview(this)
     }
 }

@@ -1,19 +1,20 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:scan_preview/scan_preview_controller.dart';
+import 'scan_preview_controller.dart';
 
 class ScanPreviewWidget extends StatefulWidget {
-  ScanPreviewWidget(
-      {this.laserColor = 0xFF00FF00,
-      this.borderColor = 0xFFFFFFFF,
-      @required this.onScanResult});
 
   final ValueChanged<String> onScanResult;
   final int laserColor;
   final int borderColor;
+  final void Function(ScanPreviewController controller) onCreate;
+
+  ScanPreviewWidget(
+      {this.laserColor = 0xFF00FF00,
+      this.borderColor = 0xFFFFFFFF,
+      @required this.onScanResult, this.onCreate});
 
   @override
   ScanPreviewWidgetState createState() => ScanPreviewWidgetState();
@@ -21,10 +22,9 @@ class ScanPreviewWidget extends StatefulWidget {
 
 class ScanPreviewWidgetState extends State<ScanPreviewWidget>
     with WidgetsBindingObserver {
-  final Completer<ScanPreviewController> _controller =
-      Completer<ScanPreviewController>();
+  ScanPreviewController _controller;
   final BasicMessageChannel _messageChannel =
-      BasicMessageChannel("scan_preview_message", StandardMessageCodec());
+  BasicMessageChannel("scan_preview_message", StandardMessageCodec());
 
   @override
   void initState() {
@@ -35,23 +35,22 @@ class ScanPreviewWidgetState extends State<ScanPreviewWidget>
 
   Future<dynamic> _messageHandler(Object message) async {
     widget.onScanResult(message.toString());
-    ScanPreviewController controller = await _controller.future;
-    controller.stopCamera();
+    _controller.stopCamera();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+    _controller?.stopCamera();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    ScanPreviewController controller = await _controller.future;
     if (state == AppLifecycleState.resumed) {
-      controller.startCamera();
+      _controller?.startCamera();
     } else if (state == AppLifecycleState.paused) {
-      controller.stopCamera();
+      _controller?.stopCamera();
     }
   }
 
@@ -85,9 +84,8 @@ class ScanPreviewWidgetState extends State<ScanPreviewWidget>
 
   Future<void> onPlatformViewCreated(int id) async {
     await Future.delayed(Duration(milliseconds: 300));
-    final ScanPreviewController controller =
-        await ScanPreviewController.init(id, this);
-    _controller.complete(controller);
-    controller.startCamera();
+    _controller = await ScanPreviewController.init(id, this);
+    if(widget.onCreate != null) widget.onCreate(_controller);
+    _controller.startCamera();
   }
 }
