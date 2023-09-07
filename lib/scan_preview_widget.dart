@@ -6,10 +6,10 @@ import 'scan_preview_controller.dart';
 
 class ScanPreviewWidget extends StatefulWidget {
 
-  final ValueChanged<String> onScanResult;
+  final ValueChanged<String>? onScanResult;
   final int laserColor;
   final int borderColor;
-  final void Function(ScanPreviewController controller) onCreate;
+  final void Function(ScanPreviewController controller)? onCreate;
 
   ScanPreviewWidget(
       {this.laserColor = 0xFF00FF00,
@@ -22,7 +22,7 @@ class ScanPreviewWidget extends StatefulWidget {
 
 class ScanPreviewWidgetState extends State<ScanPreviewWidget>
     with WidgetsBindingObserver {
-  ScanPreviewController _controller;
+  ScanPreviewController? _controller;
   final BasicMessageChannel _messageChannel =
   BasicMessageChannel("scan_preview_message", StandardMessageCodec());
 
@@ -33,9 +33,9 @@ class ScanPreviewWidgetState extends State<ScanPreviewWidget>
     _messageChannel.setMessageHandler(_messageHandler);
   }
 
-  Future<dynamic> _messageHandler(Object message) async {
-    widget.onScanResult(message.toString());
-    _controller.stopCamera();
+  Future<dynamic> _messageHandler(dynamic message) async {
+    widget.onScanResult!(message.toString());
+    _controller?.stopCamera();
   }
 
   @override
@@ -85,7 +85,7 @@ class ScanPreviewWidgetState extends State<ScanPreviewWidget>
   Future<void> onPlatformViewCreated(int id) async {
     await Future.delayed(Duration(milliseconds: 300));
     _controller = await ScanPreviewController.init(id, this);
-    if(widget.onCreate != null) widget.onCreate(_controller);
-    _controller.startCamera();
+    if(widget.onCreate != null) widget.onCreate!(_controller!);
+    _controller!.startCamera();
   }
 }
